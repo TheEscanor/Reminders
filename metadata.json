@@ -1,0 +1,5 @@
+{
+  "name": "AI Smart Reminders (Thai)",
+  "description": "A comprehensive reminder system with flexible data fields, smart AI analysis using Gemini 2.5, and automated scheduling.",
+  "requestFramePermissions": []
+}
