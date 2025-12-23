@@ -16,7 +16,6 @@ function doPost(e) {
 
 function handleRequest(e) {
   var lock = LockService.getScriptLock();
-  // Wait up to 30 seconds for other processes to finish.
   lock.tryLock(30000);
 
   try {
@@ -26,8 +25,9 @@ function handleRequest(e) {
     var usersSheet = ss.getSheetByName("Users");
     if (!usersSheet) {
       usersSheet = ss.insertSheet("Users");
-      usersSheet.appendRow(["username", "password", "created_at"]);
-      usersSheet.appendRow(["admin", "1234", new Date()]); 
+      usersSheet.appendRow(["username", "password", "created_at", "api_key"]);
+      // ตัวอย่างข้อมูลแถวที่ 2: admin, 1234, วันที่, AI Key ตัวอย่าง
+      usersSheet.appendRow(["admin", "1234", new Date(), ""]); 
     }
 
     var dataSheet = ss.getSheetByName("Data");
@@ -50,12 +50,10 @@ function handleRequest(e) {
       } catch (err) { }
     }
     
-    // Support GET param
     if (!payload.username && e.parameter.username) {
         payload.username = e.parameter.username;
     }
 
-    // Defaults
     if (!action && !payload.items && !payload.username) action = 'read';
     else if (!action && payload.items) action = 'save';
 
@@ -65,134 +63,88 @@ function handleRequest(e) {
     
     if (action === 'login') {
       var data = usersSheet.getDataRange().getValues();
-      var found = false;
+      var foundUser = null;
       for (var i = 1; i < data.length; i++) {
         var u = String(data[i][0]).trim();
         var p = String(data[i][1]).trim();
+        var k = String(data[i][3] || "").trim(); // คอลัมน์ D (index 3) คือ API Key
+        
         if (u === String(payload.username).trim() && p === String(payload.password).trim()) {
-          found = true;
+          foundUser = {
+            username: u,
+            apiKey: k
+          };
           break;
         }
       }
-      result = { success: found, username: found ? payload.username : null };
+      result = { 
+        success: foundUser !== null, 
+        username: foundUser ? foundUser.username : null,
+        apiKey: foundUser ? foundUser.apiKey : null 
+      };
     } 
     
     else if (action === 'save') {
       var currentUser = payload.username;
-      
-      if (!currentUser) {
-          throw new Error("Username is required to save data.");
-      }
+      if (!currentUser) throw new Error("Username is required.");
       
       var currentUserStr = String(currentUser).trim();
       var newItems = payload.items || [];
-
-      // Get all existing data
       var range = dataSheet.getDataRange();
       var allValues = range.getValues();
       var header = allValues[0];
       
-      // CRITICAL FIX: Ensure we have at least 4 columns in header
-      while (header.length < 4) {
-          header.push("fix_col");
-      }
-      // Reset header names to be safe
+      while (header.length < 4) header.push("");
       header[0] = "id"; header[1] = "json_data"; header[2] = "updated_at"; header[3] = "username";
       
       var otherUsersData = [];
-      
-      // Filter & Normalize
       for (var i = 1; i < allValues.length; i++) {
           var row = allValues[i];
-          
-          // Fix jagged/ragged array: Ensure every row has 4 columns
-          // If old data had 3 columns, this adds an empty string for the 4th column
-          while (row.length < 4) {
-              row.push("");
-          }
-          
-          // Truncate if too many (cleanup)
-          if (row.length > 4) {
-              row = row.slice(0, 4);
-          }
-
-          var rowUser = row[3]; 
-          // Strict comparison: Keep row if it belongs to someone else
-          if (String(rowUser).trim() !== currentUserStr) {
-              otherUsersData.push(row);
-          }
+          while (row.length < 4) row.push("");
+          if (String(row[3]).trim() !== currentUserStr) otherUsersData.push(row.slice(0, 4));
       }
 
-      // Create new rows for current user (guaranteed 4 columns)
       var newRows = newItems.map(function(item) {
-        return [
-          item.id,
-          JSON.stringify(item),
-          new Date(),
-          currentUserStr 
-        ];
+        return [item.id, JSON.stringify(item), new Date(), currentUserStr];
       });
 
-      // Merge: Header + Others + New
       var finalData = [header].concat(otherUsersData).concat(newRows);
-      
-      // Write back
       dataSheet.clear();
       if (finalData.length > 0) {
-        // Use proper range dimensions matching finalData
         dataSheet.getRange(1, 1, finalData.length, 4).setValues(finalData);
       }
-      
-      result = { success: true, count: newItems.length, owner: currentUserStr };
+      result = { success: true };
     } 
     
     else {
-      // action = 'read'
       var currentUser = payload.username;
-      if (!currentUser) {
-         result = { success: true, items: [] };
-      } else {
+      var items = [];
+      if (currentUser) {
          var currentUserStr = String(currentUser).trim();
          var range = dataSheet.getDataRange();
-         
-         // Handle empty sheet case
-         if (range.isBlank()) {
-             result = { success: true, items: [], forUser: currentUserStr };
-         } else {
+         if (!range.isBlank()) {
              var rows = range.getValues();
-             var items = [];
-             
              for (var i = 1; i < rows.length; i++) {
                var row = rows[i];
-               // Safe access with padding logic check
-               var jsonStr = row.length > 1 ? row[1] : "";
                var rowUser = row.length > 3 ? row[3] : "";
-               
                if (String(rowUser).trim() === currentUserStr) {
-                    if (jsonStr && jsonStr !== "") {
-                       try {
-                           var item = JSON.parse(jsonStr);
-                           item.owner = currentUserStr;
-                           items.push(item);
-                       } catch (e) { }
-                   }
+                    try {
+                        var item = JSON.parse(row[1]);
+                        items.push(item);
+                    } catch (e) { }
                }
              }
-             result = { success: true, items: items, forUser: currentUserStr };
          }
       }
+      result = { success: true, items: items };
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      error: error.toString(),
-      stack: error.stack
-    })).setMimeType(ContentService.MimeType.JSON);
-    
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   } finally {
     lock.releaseLock();
   }

@@ -15,11 +15,11 @@ export interface ReminderItem {
   fields: CustomField[];
   dueDate: string | null; // ISO Date string
   isCompleted: boolean;
-  recurrence?: string; // Changed from specific union to string to support "monthly_X"
+  recurrence?: string; 
   priority?: 'low' | 'medium' | 'high';
   createdAt: string;
   updatedAt: string;
-  owner?: string; // Added to track data ownership
+  owner?: string; 
 }
 
 export interface Template {
@@ -39,4 +39,5 @@ export interface ChatMessage {
 export interface User {
   username: string;
   isAuthenticated: boolean;
+  apiKey?: string; // API Key individual per user from Google Sheet
 }
