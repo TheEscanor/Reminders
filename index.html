@@ -30,9 +30,6 @@
             boxShadow: {
               'glow': '0 0 20px rgba(99, 102, 241, 0.5)',
               'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-            },
-            backdropBlur: {
-              'xs': '2px',
             }
           }
         }
@@ -41,82 +38,46 @@
     <style>
       body {
         font-family: 'Sarabun', sans-serif;
-        /* iOS-like Mesh Gradient Background */
-        background: radial-gradient(circle at 0% 0%, #3b82f6 0%, #1d4ed8 25%, #1e1b4b 50%, #000000 100%);
         background-attachment: fixed;
         background-size: cover;
         min-height: 100vh;
+        margin: 0;
       }
-      .light-mode-bg {
-         background: radial-gradient(circle at 0% 0%, #eff6ff 0%, #dbeafe 40%, #bfdbfe 100%);
-      }
-      
-      /* Glass Scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2); 
-        border-radius: 10px;
-        backdrop-filter: blur(4px);
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.4); 
-      }
-      
-      /* Glass Card Utility */
       .glass-panel {
         background: rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      }
-      .dark .glass-panel {
-        background: rgba(20, 20, 25, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
       }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.1/",
-    "react": "https://esm.sh/react@^19.2.1",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.560.0",
-    "uuid": "https://esm.sh/uuid@^13.0.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
-    "recharts": "https://esm.sh/recharts@^3.5.1"
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.0.2",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@19.0.0",
+    "uuid": "https://esm.sh/uuid@11.0.3",
+    "recharts": "https://esm.sh/recharts@2.13.3?deps=react@19.0.0,react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
-</head>
+  </head>
   <body class="text-zinc-900 dark:text-zinc-100 transition-all duration-500 selection:bg-indigo-500 selection:text-white">
     <div id="root"></div>
+    <!-- สำคัญ: เพิ่มจุดเริ่มต้นของแอปพลิเคชัน -->
+    <script type="module" src="index.tsx"></script>
     <script>
-      // Apply background based on theme
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            if (document.documentElement.classList.contains('dark')) {
-               document.body.style.background = 'radial-gradient(circle at 50% -20%, #2563eb 0%, #1e1b4b 40%, #000000 100%)';
-            } else {
-               document.body.style.background = 'radial-gradient(circle at 50% -20%, #e0e7ff 0%, #a5b4fc 40%, #eef2ff 100%)';
-            }
-          }
-        });
-      });
-      observer.observe(document.documentElement, { attributes: true });
-      
-      // Initial set
-      if (document.documentElement.classList.contains('dark') || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-         document.body.style.background = 'radial-gradient(circle at 50% -20%, #2563eb 0%, #1e1b4b 40%, #000000 100%)';
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        document.body.style.background = 'radial-gradient(circle at 50% -20%, #2563eb 0%, #1e1b4b 40%, #000000 100%)';
       } else {
-         document.body.style.background = 'radial-gradient(circle at 50% -20%, #e0e7ff 0%, #a5b4fc 40%, #eef2ff 100%)';
+        document.body.style.background = 'radial-gradient(circle at 50% -20%, #e0e7ff 0%, #a5b4fc 40%, #eef2ff 100%)';
       }
     </script>
   </body>
