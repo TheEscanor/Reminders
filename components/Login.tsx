@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { loginUser } from '../services/sheetService.ts';
-import { User as UserType } from '../types.ts';
+import { loginUser } from '../services/sheetService';
+import { User as UserType } from '../types';
 import { Lock, LogIn, Loader2, Sparkles, AlertCircle, User as UserIcon } from 'lucide-react';
 
 interface LoginProps {
