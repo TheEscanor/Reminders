@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { analyzeDataWithGemini } from '../services/geminiService';
-import { ReminderItem, ChatMessage } from '../types';
+import { analyzeDataWithGemini } from '../services/geminiService.ts';
+import { ReminderItem, ChatMessage } from '../types.ts';
 import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 
 interface AIAssistantProps {

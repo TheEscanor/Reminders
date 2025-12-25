@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ReminderItem, ChatMessage } from "../types";
+import { ReminderItem, ChatMessage } from "../types.ts";
 
 const SYSTEM_INSTRUCTION = `
 คุณคือผู้ช่วย AI อัจฉริยะสำหรับ "ระบบเตือนความจำ" หน้าที่ของคุณคือวิเคราะห์ข้อมูลรายการของผู้ใช้ และตอบคำถามเป็นภาษาไทย

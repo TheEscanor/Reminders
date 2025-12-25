@@ -1,4 +1,4 @@
-import { ReminderItem, User } from "../types";
+import { ReminderItem, User } from "../types.ts";
 
 // Note: Ensure this URL matches your deployed Web App URL
 const API_URL = 'https://script.google.com/macros/s/AKfycbxj_PHDFFZVEMOFgtTuUkVsuXfm8OsUIuzR642uA2ST4HfkUr5FkLYYHAShgnclxNhsLA/exec';
