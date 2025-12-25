@@ -1,6 +1,5 @@
-import { ReminderItem, User } from "../types.ts";
+import { ReminderItem, User } from "../types";
 
-// Note: Ensure this URL matches your deployed Web App URL
 const API_URL = 'https://script.google.com/macros/s/AKfycbxj_PHDFFZVEMOFgtTuUkVsuXfm8OsUIuzR642uA2ST4HfkUr5FkLYYHAShgnclxNhsLA/exec';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -27,7 +26,7 @@ export const loginUser = async (username: string, password: string): Promise<Use
         return {
           username: result.username,
           isAuthenticated: true,
-          apiKey: result.apiKey // Get from column D
+          apiKey: result.apiKey
         };
       }
     }
@@ -38,9 +37,6 @@ export const loginUser = async (username: string, password: string): Promise<Use
   }
 };
 
-/**
- * Re-fetches only the user's profile metadata (like API Key) from the sheet
- */
 export const fetchUserProfile = async (username: string): Promise<{ apiKey: string } | null> => {
   try {
     const url = `${API_URL}?action=getProfile&username=${encodeURIComponent(username.trim())}&t=${new Date().getTime()}`;

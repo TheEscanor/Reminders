@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ReminderItem, ChatMessage } from "../types.ts";
+import { ReminderItem, ChatMessage } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 คุณคือผู้ช่วย AI อัจฉริยะสำหรับ "ระบบเตือนความจำ" หน้าที่ของคุณคือวิเคราะห์ข้อมูลรายการของผู้ใช้ และตอบคำถามเป็นภาษาไทย
@@ -27,8 +27,6 @@ export const analyzeDataWithGemini = async (
   apiKey: string | undefined,
   history: ChatMessage[] = []
 ): Promise<string> => {
-  // STRICT MODE: Only use the API Key provided from the sheet. 
-  // No fallback to process.env.API_KEY to allow user testing of key removal.
   const effectiveApiKey = apiKey?.trim();
   
   if (!effectiveApiKey) {
@@ -36,7 +34,6 @@ export const analyzeDataWithGemini = async (
   }
 
   try {
-    // Instantiate new client for each call to ensure the latest key is used
     const ai = new GoogleGenAI({ apiKey: effectiveApiKey });
     
     const itemsContext = JSON.stringify(items.map(item => ({
@@ -73,7 +70,6 @@ export const analyzeDataWithGemini = async (
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // Custom error messages for specific status codes
     const errorStr = String(error);
     if (errorStr.includes("401") || errorStr.includes("403")) {
       return "❌ API Key ไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง (401/403) กรุณาตรวจสอบ Key ใน Google Sheet อีกครั้ง";
