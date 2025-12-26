@@ -11,14 +11,12 @@ import { generateSmartSummary } from './services/geminiService';
 import { fetchItemsFromSheet, saveItemsToSheet, fetchUserProfile } from './services/sheetService';
 import { v4 as uuidv4 } from 'uuid';
 
-const INITIAL_DATA: ReminderItem[] = [];
-
 type SyncStatus = 'idle' | 'syncing' | 'saved' | 'error';
 type Theme = 'light' | 'dark';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [items, setItems] = useState<ReminderItem[]>(INITIAL_DATA);
+  const [items, setItems] = useState<ReminderItem[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false); 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [theme, setTheme] = useState<Theme>('light');
@@ -28,7 +26,6 @@ function App() {
   const [editingItem, setEditingItem] = useState<ReminderItem | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [isSyncingProfile, setIsSyncingProfile] = useState(false);
@@ -37,15 +34,13 @@ function App() {
   const [fontScale, setFontScale] = useState(100);
   const [showFullApiKey, setShowFullApiKey] = useState(false);
 
+  // Initial Theme Setup
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    }
+    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    setTheme(initialTheme);
+    applyTheme(initialTheme);
 
     const savedFontScale = localStorage.getItem('fontScale');
     if (savedFontScale) setFontScale(Number(savedFontScale));
@@ -53,6 +48,30 @@ function App() {
     const savedUser = localStorage.getItem('ai_reminders_user');
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
+
+  const applyTheme = (t: Theme) => {
+    const root = document.documentElement;
+    const body = document.body;
+    
+    if (t === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      body.classList.add('dark-theme');
+      body.classList.remove('light-theme');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      body.classList.add('light-theme');
+      body.classList.remove('dark-theme');
+    }
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+  };
 
   useEffect(() => {
     document.documentElement.style.fontSize = `${fontScale}%`;
@@ -79,7 +98,6 @@ function App() {
         if (cloudData && Array.isArray(cloudData)) {
             setItems(cloudData);
             localStorage.setItem(localKey, JSON.stringify(cloudData));
-            setSyncStatus('idle');
         }
       } catch (error) {
         setSyncStatus('error');
@@ -89,13 +107,6 @@ function App() {
     };
     loadData();
   }, [user?.username]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-  };
 
   const handleLoginSuccess = (userData: User) => {
     setUser(userData);
@@ -119,7 +130,7 @@ function App() {
       localStorage.setItem('ai_reminders_user', JSON.stringify(updatedUser));
       alert('อัปเดต API Key จาก Google Sheet สำเร็จแล้ว!');
     } else {
-      alert('ไม่สามารถดึงข้อมูลโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง');
+      alert('ไม่สามารถดึงข้อมูลโปรไฟล์ได้');
     }
     setIsSyncingProfile(false);
   };
@@ -140,7 +151,7 @@ function App() {
   };
 
   const handleSaveItem = (item: ReminderItem) => {
-    const newItems = editingItem ? items.map(i => i.id === item.id ? item : i) : [...items, item];
+    const newItems = editingItem ? items.map(i => i.id === item.id ? item : i) : [item, ...items];
     setIsModalOpen(false);
     setEditingItem(null);
     updateItems(newItems);
@@ -176,68 +187,68 @@ function App() {
       setLoadingSummary(false);
   };
 
-  const handleCopyApiKey = () => {
-    if (user?.apiKey) {
-      navigator.clipboard.writeText(user.apiKey);
-      alert('คัดลอก API Key เรียบร้อยแล้ว');
-    }
-  };
-
-  const maskApiKey = (key: string | undefined) => {
-    if (!key || key.trim() === "") return 'ไม่พบ API Key';
-    if (key.length <= 16) return key;
-    return `${key.substring(0, 16)}${'*'.repeat(Math.max(0, key.length - 16))}`;
-  };
-
   if (!user) return <Login onLoginSuccess={handleLoginSuccess} />;
 
   return (
-    <div className="min-h-screen flex font-sans text-zinc-900 dark:text-zinc-100 overflow-hidden">
-      <div className="md:hidden fixed top-0 w-full glass-panel z-30 px-4 py-3 flex justify-between items-center border-b border-white/10">
+    <div className="min-h-screen flex font-sans overflow-hidden bg-transparent">
+      {/* Mobile Top Nav */}
+      <div className="md:hidden fixed top-0 w-full glass-panel z-30 px-4 py-3 flex justify-between items-center">
          <div className="flex items-center gap-2">
-            <div className="bg-indigo-500/80 backdrop-blur-md p-1.5 rounded-xl shadow-lg">
+            <div className="bg-indigo-600 p-1.5 rounded-xl">
                <Bell className="text-white" size={18} />
             </div>
-            <span className="font-bold text-lg text-zinc-800 dark:text-white">Smart Reminders</span>
+            <span className="font-bold text-lg">Smart Reminders</span>
          </div>
          <div className="flex items-center gap-2">
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-zinc-600 dark:text-zinc-300 rounded-full"><Settings size={20} /></button>
-            <button onClick={toggleTheme} className="p-2 text-zinc-600 dark:text-zinc-300 rounded-full">{theme === 'light' ? <Sun size={20} /> : <Moon size={20} />}</button>
+            <button onClick={toggleTheme} className="p-2 text-zinc-600 dark:text-zinc-300 rounded-full">{theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}</button>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-zinc-600 dark:text-zinc-300 rounded-full">{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
          </div>
       </div>
 
+      {/* Sidebar */}
       <aside className={`fixed inset-y-4 left-4 z-40 w-72 glass-panel rounded-[2rem] transform transition-transform md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-[120%]'} md:static md:block flex flex-col p-6 m-4 md:mr-0 md:h-[calc(100vh-2rem)]`}>
-        <div className="mb-8 px-2">
-            <div className="flex items-center gap-3 p-4 bg-white/10 dark:bg-black/20 rounded-3xl border border-white/10 shadow-lg">
-                <div className="p-3 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl text-white"><UserIcon size={24} /></div>
-                <div className="flex-1 min-w-0"><p className="text-base font-bold truncate text-zinc-800 dark:text-white">{user.username}</p></div>
-                <button onClick={handleLogout} className="p-2.5 text-zinc-400 hover:text-red-400 rounded-xl"><LogOut size={20} /></button>
+        <div className="mb-8">
+            <div className="flex items-center gap-3 p-4 bg-zinc-100/50 dark:bg-white/5 rounded-3xl border border-zinc-200 dark:border-white/10">
+                <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg"><UserIcon size={24} /></div>
+                <div className="flex-1 min-w-0"><p className="text-base font-bold truncate">{user.username}</p></div>
+                <button onClick={handleLogout} className="p-2 text-zinc-400 hover:text-red-500 transition"><LogOut size={18} /></button>
             </div>
         </div>
-        <nav className="space-y-3 flex-1">
-          <button onClick={() => {setView('dashboard'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl ${view === 'dashboard' ? 'bg-white/20 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}><LayoutDashboard size={22}/><span>Dashboard</span></button>
-          <button onClick={() => {setView('list'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl ${view === 'list' ? 'bg-white/20 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}><ListTodo size={22}/><span>My List</span></button>
-          <button onClick={() => {setView('lifelog'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl ${view === 'lifelog' ? 'bg-white/20 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}><History size={22}/><span>Timeline</span></button>
-          <button onClick={() => {setView('ai'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl ${view === 'ai' ? 'bg-white/20 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}><MessageSquareText size={22}/><span>AI Assistant</span></button>
+        <nav className="space-y-2 flex-1">
+          <button onClick={() => {setView('dashboard'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition ${view === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5'}`}><LayoutDashboard size={20}/><span>Dashboard</span></button>
+          <button onClick={() => {setView('list'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition ${view === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5'}`}><ListTodo size={20}/><span>My List</span></button>
+          <button onClick={() => {setView('lifelog'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition ${view === 'lifelog' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5'}`}><History size={20}/><span>Timeline</span></button>
+          <button onClick={() => {setView('ai'); setIsMobileMenuOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition ${view === 'ai' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5'}`}><MessageSquareText size={20}/><span>AI Assistant</span></button>
         </nav>
+        <div className="pt-4 border-t border-zinc-200 dark:border-white/10">
+           <button onClick={() => setIsSettingsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-2xl transition"><Settings size={18}/><span>Settings</span></button>
+        </div>
       </aside>
 
-      <main className="flex-1 p-4 md:p-6 pt-20 md:pt-4 max-w-7xl mx-auto w-full overflow-y-auto h-screen custom-scrollbar">
-        <div className="hidden md:flex justify-between items-center mb-6">
-            <div><h2 className="text-4xl font-bold text-zinc-800 dark:text-white">{view === 'dashboard' ? 'Dashboard' : view === 'list' ? 'Reminders' : view === 'lifelog' ? 'Timeline' : 'Assistant'}</h2></div>
-            <div className="flex items-center gap-4">
-                <button onClick={() => setIsSettingsOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-full glass-panel transition hover:scale-105 active:scale-95"><Settings size={22} /></button>
-                <button onClick={toggleTheme} className="w-12 h-12 flex items-center justify-center rounded-full glass-panel transition hover:scale-105 active:scale-95">{theme === 'light' ? <Sun size={22} /> : <Moon size={22} />}</button>
-                <button onClick={() => {setEditingItem(null); setIsModalOpen(true)}} className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-bold shadow-xl transition hover:scale-105 active:scale-95"><Plus size={20} />New Item</button>
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 max-w-7xl mx-auto w-full overflow-y-auto h-screen custom-scrollbar">
+        <div className="hidden md:flex justify-between items-center mb-10">
+            <div>
+                <h2 className="text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+                    {view === 'dashboard' ? 'Insight' : view === 'list' ? 'Reminders' : view === 'lifelog' ? 'Timeline' : 'Assistant'}
+                </h2>
+                <p className="text-zinc-500 dark:text-zinc-400 mt-1">Hello, {user.username}. Have a productive day!</p>
+            </div>
+            <div className="flex items-center gap-3">
+                <button onClick={toggleTheme} className="w-12 h-12 flex items-center justify-center rounded-2xl glass-panel hover:scale-105 active:scale-95 transition">
+                    {theme === 'light' ? <Moon size={22} className="text-indigo-600" /> : <Sun size={22} className="text-amber-400" />}
+                </button>
+                <button onClick={() => {setEditingItem(null); setIsModalOpen(true)}} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-7 py-3.5 rounded-2xl font-bold shadow-xl shadow-indigo-600/25 transition hover:scale-105 active:scale-95">
+                    <Plus size={20} strokeWidth={3} /> Create New
+                </button>
             </div>
         </div>
 
         <div className="animate-fade-in pb-20 md:pb-0">
             {loadingInitial ? (
-                <div className="flex flex-col items-center justify-center h-64 gap-4 text-zinc-500">
-                    <Loader2 className="animate-spin" size={48} />
-                    <p className="font-medium">กำลังโหลดข้อมูลจาก Google Sheet...</p>
+                <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+                    <Loader2 className="animate-spin text-indigo-600" size={48} />
+                    <p className="font-semibold text-zinc-500">Syncing with Cloud...</p>
                 </div>
             ) : (
                 <>
@@ -250,88 +261,49 @@ function App() {
         </div>
       </main>
 
-      {isModalOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4"><div className="w-full max-w-2xl"><ItemForm initialItem={editingItem} onSave={handleSaveItem} onCancel={() => setIsModalOpen(false)} /></div></div>}
+      {/* Floating Action Button (Mobile Only) */}
+      <button 
+        onClick={() => {setEditingItem(null); setIsModalOpen(true)}}
+        className="md:hidden fixed bottom-6 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-90 transition-transform"
+      >
+        <Plus size={32} strokeWidth={3} />
+      </button>
+
+      {/* Modals */}
+      {isModalOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div className="w-full max-w-2xl"><ItemForm initialItem={editingItem} onSave={handleSaveItem} onCancel={() => setIsModalOpen(false)} /></div></div>}
       
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[80] flex items-center justify-center p-4" onClick={() => setIsSettingsOpen(false)}>
-          <div className="glass-panel bg-white/95 dark:bg-zinc-900/95 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border border-white/20 animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[80] flex items-center justify-center p-4" onClick={() => setIsSettingsOpen(false)}>
+          <div className="glass-panel rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border border-white/20 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-2xl font-bold flex items-center gap-3 text-zinc-800 dark:text-white">
-                <Settings size={24} className="text-indigo-500" /> การตั้งค่า
+                <Settings size={24} className="text-indigo-600" /> Settings
               </h3>
-              <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition">
-                <X size={24} />
-              </button>
+              <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full transition"><X size={24} /></button>
             </div>
             
             <div className="space-y-8">
               <div>
-                <label className="text-sm font-bold flex items-center gap-2 mb-4 text-zinc-700 dark:text-zinc-300">
-                  <Type size={18} className="text-indigo-400" /> ขนาดตัวอักษร ({fontScale}%)
+                <label className="text-sm font-bold flex items-center gap-2 mb-4 text-zinc-600 dark:text-zinc-400">
+                  <Type size={18} /> Font Size ({fontScale}%)
                 </label>
-                <input 
-                  type="range" 
-                  min="85" 
-                  max="115" 
-                  step="5" 
-                  value={fontScale} 
-                  onChange={(e) => setFontScale(Number(e.target.value))} 
-                  className="w-full h-2 bg-zinc-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-600" 
-                />
+                <input type="range" min="85" max="115" step="5" value={fontScale} onChange={(e) => setFontScale(Number(e.target.value))} className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
               </div>
 
               <div className="pt-6 border-t border-zinc-200 dark:border-white/10">
-                <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-bold flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                    <Key size={18} className="text-indigo-400" /> AI API Key
-                  </label>
-                  <button 
-                    onClick={handleSyncProfile}
-                    disabled={isSyncingProfile}
-                    title="Sync กับ Google Sheet"
-                    className="p-1.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition disabled:opacity-50"
-                  >
-                    <RefreshCw size={16} className={isSyncingProfile ? 'animate-spin' : ''} />
-                  </button>
+                <div className="flex justify-between items-center mb-4">
+                  <label className="text-sm font-bold flex items-center gap-2 text-zinc-600 dark:text-zinc-400"><Key size={18} /> API Key Status</label>
+                  <button onClick={handleSyncProfile} disabled={isSyncingProfile} className="p-2 bg-indigo-50 dark:bg-white/5 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition"><RefreshCw size={16} className={isSyncingProfile ? 'animate-spin' : ''} /></button>
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="relative group">
-                    <div className="w-full px-4 py-3 text-xs bg-zinc-100 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-600 dark:text-white/70 font-mono break-all min-h-[44px] flex items-center">
-                      {showFullApiKey ? (user?.apiKey || 'ไม่พบ API Key') : maskApiKey(user?.apiKey)}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowFullApiKey(!showFullApiKey)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-700 dark:text-white rounded-xl text-xs font-bold transition"
-                    >
-                      {showFullApiKey ? <><EyeOff size={14} /> ปิดบัง</> : <><Eye size={14} /> แสดง</>}
-                    </button>
-                    <button 
-                      onClick={handleCopyApiKey}
-                      disabled={!user?.apiKey || user.apiKey.trim() === ""}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-400 text-white rounded-xl text-xs font-bold shadow-lg transition active:scale-95"
-                    >
-                      <Copy size={14} /> คัดลอก
-                    </button>
-                  </div>
+                <div className="p-4 bg-zinc-100 dark:bg-black/40 rounded-2xl border border-zinc-200 dark:border-white/10 text-xs font-mono break-all text-zinc-600 dark:text-zinc-400">
+                  {user?.apiKey ? (showFullApiKey ? user.apiKey : '••••••••••••••••••••••••') : 'No Key Configured'}
                 </div>
-                
-                <p className="text-[10px] text-zinc-400 dark:text-white/30 mt-3 leading-relaxed italic">
-                  * หากเติม Key ใน Sheet แล้วไม่ขึ้น ให้กดปุ่มลูกศรหมุนด้านบนเพื่อ Sync
-                </p>
-              </div>
-
-              <div className="pt-4">
-                <button 
-                  onClick={() => {setFontScale(100); setIsSettingsOpen(false)}} 
-                  className="w-full py-4 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-700 dark:text-white rounded-2xl font-bold transition"
-                >
-                  รีเซ็ตขนาดตัวอักษร
+                <button onClick={() => setShowFullApiKey(!showFullApiKey)} className="w-full mt-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 py-2">
+                    {showFullApiKey ? 'Hide Key' : 'Show Key'}
                 </button>
               </div>
+
+              <button onClick={handleLogout} className="w-full py-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl font-bold transition hover:bg-red-100">Sign Out</button>
             </div>
           </div>
         </div>
