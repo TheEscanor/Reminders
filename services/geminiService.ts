@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { ReminderItem, ChatMessage } from "../types";
 
@@ -21,20 +22,15 @@ const SYSTEM_INSTRUCTION = `
 - เน้นคำสำคัญด้วย **...**
 `;
 
+// Always use process.env.API_KEY for the API client
 export const analyzeDataWithGemini = async (
   items: ReminderItem[],
   userQuery: string,
-  apiKey: string | undefined,
   history: ChatMessage[] = []
 ): Promise<string> => {
-  const effectiveApiKey = apiKey?.trim();
-  
-  if (!effectiveApiKey) {
-    return "⚠️ ไม่พบ API Key ในบัญชีของคุณ (ชีตคอลัมน์ D ว่างเปล่า) กรุณากรอก Key ใน Google Sheet แล้วทำการ Logout และ Login ใหม่เพื่อดึงข้อมูลคีย์ล่าสุดครับ";
-  }
-
   try {
-    const ai = new GoogleGenAI({ apiKey: effectiveApiKey });
+    // Initializing with process.env.API_KEY directly as required
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     
     const itemsContext = JSON.stringify(items.map(item => ({
       title: item.title,
@@ -46,19 +42,23 @@ export const analyzeDataWithGemini = async (
 
     const today = new Date().toLocaleDateString('en-CA'); 
 
+    // Optional: Include history in the prompt context
+    const historyContext = history.length > 0 ? 
+      "\n[ประวัติการสนทนา]\n" + history.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.text}`).join('\n') : "";
+
     const prompt = `
     [บริบทข้อมูลปัจจุบัน (วันนี้: ${today})]
     รายการทั้งหมดในระบบ:
     ${itemsContext}
+    ${historyContext}
     
     [คำถามของผู้ใช้]
     ${userQuery}
     `;
 
-    const model = 'gemini-3-flash-preview';
-    
+    // Always use gemini-3-flash-preview for general text and reasoning tasks
     const response = await ai.models.generateContent({
-      model: model,
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -66,19 +66,17 @@ export const analyzeDataWithGemini = async (
       }
     });
 
+    // Extract text directly from the property .text (do not use .text())
     return response.text || "ขออภัย ไม่สามารถประมวลผลคำตอบได้ในขณะนี้";
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    const errorStr = String(error);
-    if (errorStr.includes("401") || errorStr.includes("403")) {
-      return "❌ API Key ไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง (401/403) กรุณาตรวจสอบ Key ใน Google Sheet อีกครั้ง";
-    }
-    return `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "โปรดตรวจสอบ API Key ของคุณ"}`;
+    return `เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "โปรดตรวจสอบการเชื่อมต่อของคุณ"}`;
   }
 };
 
-export const generateSmartSummary = async (items: ReminderItem[], apiKey: string | undefined): Promise<string> => {
+export const generateSmartSummary = async (items: ReminderItem[]): Promise<string> => {
     const query = "ช่วยสรุปภาพรวมงานที่ต้องทำ งานที่ค้าง และงานสำคัญในเดือนนี้ให้หน่อย รวมถึงตรวจสอบรีไฟแนนซ์บ้านด้วย และอย่าลืมเน้นคำสำคัญด้วยเครื่องหมาย **...**";
-    return analyzeDataWithGemini(items, query, apiKey);
+    // Removed apiKey argument to use process.env.API_KEY internally
+    return analyzeDataWithGemini(items, query);
 }

@@ -1,3 +1,4 @@
+
 export type FieldType = 'text' | 'number' | 'date' | 'checkbox';
 
 export interface CustomField {
@@ -39,5 +40,4 @@ export interface ChatMessage {
 export interface User {
   username: string;
   isAuthenticated: boolean;
-  apiKey?: string; // API Key individual per user from Google Sheet
 }

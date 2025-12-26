@@ -1,3 +1,4 @@
+
 import { ReminderItem, User } from "../types";
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbxj_PHDFFZVEMOFgtTuUkVsuXfm8OsUIuzR642uA2ST4HfkUr5FkLYYHAShgnclxNhsLA/exec';
@@ -25,8 +26,7 @@ export const loginUser = async (username: string, password: string): Promise<Use
       if (result.success) {
         return {
           username: result.username,
-          isAuthenticated: true,
-          apiKey: result.apiKey
+          isAuthenticated: true
         };
       }
     }
@@ -37,14 +37,14 @@ export const loginUser = async (username: string, password: string): Promise<Use
   }
 };
 
-export const fetchUserProfile = async (username: string): Promise<{ apiKey: string } | null> => {
+export const fetchUserProfile = async (username: string): Promise<{ success: boolean } | null> => {
   try {
     const url = `${API_URL}?action=getProfile&username=${encodeURIComponent(username.trim())}&t=${new Date().getTime()}`;
     const response = await fetch(url, { method: 'GET', mode: 'cors', redirect: 'follow' });
     if (response.ok) {
       const result = await response.json();
       if (result.success) {
-        return { apiKey: result.apiKey };
+        return { success: true };
       }
     }
     return null;
