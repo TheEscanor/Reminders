@@ -40,4 +40,5 @@ export interface ChatMessage {
 export interface User {
   username: string;
   isAuthenticated: boolean;
+  apiKey?: string;
 }

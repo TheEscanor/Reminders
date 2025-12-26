@@ -36,7 +36,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [fontScale, setFontScale] = useState(100);
 
-  const t = translations[lang];
+  const t = translations[lang] as any;
 
   // Initial Theme & Lang Setup
   useEffect(() => {
@@ -121,7 +121,12 @@ function App() {
   const handleSyncProfile = async () => {
     if (!user) return;
     setIsSyncingProfile(true);
-    await fetchUserProfile(user.username);
+    const result = await fetchUserProfile(user.username);
+    if (result && result.success) {
+      const updatedUser = { ...user, apiKey: result.apiKey };
+      setUser(updatedUser);
+      localStorage.setItem('ai_reminders_user', JSON.stringify(updatedUser));
+    }
     setIsSyncingProfile(false);
   };
 
@@ -142,7 +147,6 @@ function App() {
     updateItems(newItems);
   };
 
-  // Corrected: handleToggleComplete implementation fixed the missing name error
   const handleToggleComplete = (id: string, current: boolean) => {
     const newItems = items.map(i => i.id === id ? { ...i, isCompleted: !current, updatedAt: new Date().toISOString() } : i);
     updateItems(newItems);
@@ -151,7 +155,6 @@ function App() {
   const handleRefreshSummary = async () => {
       if (!user) return;
       setLoadingSummary(true);
-      // Service now uses process.env.API_KEY directly
       const summary = await generateSmartSummary(items);
       setAiSummary(summary);
       setLoadingSummary(false);
@@ -164,7 +167,7 @@ function App() {
       {/* Mobile Top Nav */}
       <div className="md:hidden fixed top-0 w-full glass-panel z-30 px-4 py-3 flex justify-between items-center">
          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-1.5 rounded-xl"><Bell className="text-white" size={18} /></div>
+            <div className="bg-indigo-600 p-1.5 rounded-xl"><Bell Ring={18} /></div>
             <span className="font-bold text-lg">Smart Reminders</span>
          </div>
          <div className="flex items-center gap-1">
@@ -249,6 +252,30 @@ function App() {
               <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full transition"><X size={24} /></button>
             </div>
             <div className="space-y-8">
+              {/* API Key Status Section */}
+              <div className="p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-200 dark:border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-400">
+                    <Key size={18} className="text-indigo-600" /> {t.aiKeyStatus}
+                  </div>
+                  <button onClick={handleSyncProfile} disabled={isSyncingProfile} className="text-indigo-600 dark:text-indigo-400">
+                    <RefreshCw size={16} className={isSyncingProfile ? 'animate-spin' : ''} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                   {user.apiKey ? (
+                     <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">
+                       <Check size={12} /> {t.aiKeyConnected}
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 bg-zinc-100 dark:bg-white/5 px-2 py-1 rounded-full">
+                       <X size={12} /> {t.aiKeyNotSet}
+                     </div>
+                   )}
+                </div>
+                <p className="text-[10px] text-zinc-400 mt-2 italic">{t.aiKeyNote}</p>
+              </div>
+
               <div>
                 <label className="text-sm font-bold flex items-center gap-2 mb-4 text-zinc-600 dark:text-zinc-400"><Type size={18} /> {t.fontSize} ({fontScale}%)</label>
                 <input type="range" min="85" max="115" step="5" value={fontScale} onChange={(e) => setFontScale(Number(e.target.value))} className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-600" />

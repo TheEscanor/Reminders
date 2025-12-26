@@ -64,7 +64,46 @@ export const translations = {
     tipsDeduction: "• สำหรับค่าใช้จ่าย: ใช้คำว่า 'ยอดชำระ' หรือ 'ราคา'",
     tipsBalance: "• สำหรับเงินคงเหลือ: ใช้คำว่า 'ยอดคงเหลือ' หรือ 'เงินต้นคงเหลือ'",
     tipsHome: "• สำหรับบ้าน: ใช้คำว่า 'วันจดจำนอง' หรือ 'วันที่เริ่มกู้'",
-    tipsAuto: "AI จะคำนวณวันรีไฟแนนซ์ (3 ปี) และสรุปยอดเงินให้อัตโนมัติ"
+    tipsAuto: "AI จะคำนวณวันรีไฟแนนซ์ (3 ปี) และสรุปยอดเงินให้อัตโนมัติ",
+    applyPreset: "ใช้แม่แบบด่วน",
+    
+    // Presets
+    presetCar: "ผ่อนรถยนต์",
+    presetHome: "สินเชื่อบ้าน/รีไฟแนนซ์",
+    presetHealth: "สุขภาพ",
+    presetHousework: "งานบ้าน",
+    presetElectric: "ค่าไฟ",
+    presetWater: "ค่าน้ำ",
+    presetInternet: "อินเทอร์เน็ต",
+    presetTravel: "เที่ยว",
+    
+    // Preset Titles
+    titleCar: "รายการผ่อนรถยนต์",
+    titleHome: "รายการผ่อนบ้าน / รีไฟแนนซ์",
+    titleHealth: "บันทึกสุขภาพ / นัดหมอ",
+    titleHousework: "รายการงานบ้าน",
+    titleElectric: "ชำระค่าไฟฟ้า",
+    titleWater: "ชำระค่าน้ำประปา",
+    titleInternet: "ชำระค่าอินเทอร์เน็ต",
+    titleTravel: "ทริปท่องเที่ยว / แพลนการเดินทาง",
+
+    // Recurrence Labels
+    recurrenceNone: "ไม่ทำซ้ำ",
+    recurrenceDaily: "รายวัน",
+    recurrenceWeekly: "รายสัปดาห์",
+    recurrenceMonthly: "รายเดือน",
+    recurrenceYearly: "รายปี",
+    every: "ทุกๆ",
+    unitDay: "วัน",
+    unitWeek: "สัปดาห์",
+    unitMonth: "เดือน",
+    unitYear: "ปี",
+
+    // Settings
+    aiKeyStatus: "สถานะการเชื่อมต่อ AI",
+    aiKeyConnected: "เชื่อมต่อแล้ว",
+    aiKeyNotSet: "ยังไม่ได้ตั้งค่า",
+    aiKeyNote: "* API Key จะถูกดึงมาจากระบบ Google Sheet อัตโนมัติ"
   },
   en: {
     dashboard: "Dashboard",
@@ -131,7 +170,46 @@ export const translations = {
     tipsDeduction: "• For Expenses: Use 'ยอดชำระ' (Amount) or 'Price'",
     tipsBalance: "• For Balance: Use 'ยอดคงเหลือ' or 'Remaining Balance'",
     tipsHome: "• For Home: Use 'วันจดจำนอง' (Mortgage Date) or 'Loan Start Date'",
-    tipsAuto: "AI will auto-calculate Refinance dates (3 yrs) and summarize totals."
+    tipsAuto: "AI will auto-calculate Refinance dates (3 yrs) and summarize totals.",
+    applyPreset: "Quick Templates",
+    
+    // Presets
+    presetCar: "Car Installment",
+    presetHome: "Home Loan/Refinance",
+    presetHealth: "Health",
+    presetHousework: "Housework",
+    presetElectric: "Electricity",
+    presetWater: "Water Bill",
+    presetInternet: "Internet",
+    presetTravel: "Travel",
+
+    // Preset Titles
+    titleCar: "Car Installment Payment",
+    titleHome: "Mortgage / Refinance Payment",
+    titleHealth: "Health Log / Doctor Appointment",
+    titleHousework: "Housework Task",
+    titleElectric: "Electricity Bill",
+    titleWater: "Water Bill Payment",
+    titleInternet: "Internet Bill",
+    titleTravel: "Travel Trip / Itinerary",
+
+    // Recurrence Labels
+    recurrenceNone: "None",
+    recurrenceDaily: "Daily",
+    recurrenceWeekly: "Weekly",
+    recurrenceMonthly: "Monthly",
+    recurrenceYearly: "Yearly",
+    every: "Every",
+    unitDay: "Day(s)",
+    unitWeek: "Week(s)",
+    unitMonth: "Month(s)",
+    unitYear: "Year(s)",
+
+    // Settings
+    aiKeyStatus: "AI Connection Status",
+    aiKeyConnected: "Connected",
+    aiKeyNotSet: "Not Set",
+    aiKeyNote: "* API Key is automatically managed via Google Sheets."
   }
 };
 

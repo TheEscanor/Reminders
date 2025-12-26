@@ -26,7 +26,8 @@ export const loginUser = async (username: string, password: string): Promise<Use
       if (result.success) {
         return {
           username: result.username,
-          isAuthenticated: true
+          isAuthenticated: true,
+          apiKey: result.apiKey // เพิ่มการส่งค่า apiKey กลับมา
         };
       }
     }
@@ -37,14 +38,14 @@ export const loginUser = async (username: string, password: string): Promise<Use
   }
 };
 
-export const fetchUserProfile = async (username: string): Promise<{ success: boolean } | null> => {
+export const fetchUserProfile = async (username: string): Promise<{ success: boolean, apiKey?: string } | null> => {
   try {
     const url = `${API_URL}?action=getProfile&username=${encodeURIComponent(username.trim())}&t=${new Date().getTime()}`;
     const response = await fetch(url, { method: 'GET', mode: 'cors', redirect: 'follow' });
     if (response.ok) {
       const result = await response.json();
       if (result.success) {
-        return { success: true };
+        return { success: true, apiKey: result.apiKey };
       }
     }
     return null;
